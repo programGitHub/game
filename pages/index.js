@@ -85,6 +85,7 @@ const Home = () => {
   useEffect(() => {
     if (status) {
       setTime(10000);
+      setTodo(makeTodo());
       setScore(0);
       setValue('');
     }
@@ -110,6 +111,7 @@ const Home = () => {
 
     if (todo.value.toString() === newValue) {
       setValue('');
+      setTime(time + 5000);
       setScore(score + 1);
       setTodo(makeTodo(+newValue));
     }

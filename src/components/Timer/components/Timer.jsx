@@ -6,7 +6,7 @@ import Typography from '@material-ui/core/Typography';
  */
 const Timer = ({ children }) => (
   <Typography align="center" color="secondary" variant="h6">
-    {children}
+    {(children / 1000).toFixed(2)}
   </Typography>
 );
 
