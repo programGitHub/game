@@ -1,203 +1,156 @@
-import Head from 'next/head'
+import Box from '@material-ui/core/Box';
+import KeyBoard from 'src/components/KeyBoard';
+import Question from 'src/components/Question';
+import ResumeScreen from 'src/components/ResumeScreen';
+import Score from 'src/components/Score';
+import Timer from 'src/components/Timer';
+import UserInputs from 'src/components/UserInputs';
+import { useEffect, useState } from 'react';
+import useInterval from 'src/hooks/useInterval';
 
-const Home = () => (
-  <div className="container">
-    <Head>
-      <title>Create Next App</title>
-      <link rel="icon" href="/favicon.ico" />
-    </Head>
+const INTERVAL = 100;
+const MAX = 50;
 
-    <main>
-      <h1 className="title">
-        Welcome to <a href="https://nextjs.org">Next.js!</a>
-      </h1>
+function makeSum(n) {
+  const a = Math.floor(Math.random() * MAX);
 
-      <p className="description">
-        Get started by editing <code>pages/index.js</code>
-      </p>
+  return {
+    question: `Add ${a}`,
+    value: n + a,
+  };
+}
 
-      <div className="grid">
-        <a href="https://nextjs.org/docs" className="card">
-          <h3>Documentation &rarr;</h3>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
+function makeSub(n) {
+  const a = Math.floor(Math.random() * n);
 
-        <a href="https://nextjs.org/learn" className="card">
-          <h3>Learn &rarr;</h3>
-          <p>Learn about Next.js in an interactive course with quizzes!</p>
-        </a>
+  return {
+    question: `Substract ${a}`,
+    value: n - a,
+  };
+}
 
-        <a
-          href="https://github.com/zeit/next.js/tree/master/examples"
-          className="card"
-        >
-          <h3>Examples &rarr;</h3>
-          <p>Discover and deploy boilerplate example Next.js projects.</p>
-        </a>
+function makeMul(n) {
+  const a = Math.floor(Math.random() * MAX);
 
-        <a
-          href="https://zeit.co/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          className="card"
-        >
-          <h3>Deploy &rarr;</h3>
-          <p>
-            Instantly deploy your Next.js site to a public URL with ZEIT Now.
-          </p>
-        </a>
-      </div>
-    </main>
+  return {
+    question: `Multiply by ${a}`,
+    value: n * a,
+  };
+}
 
-    <footer>
-      <a
-        href="https://zeit.co?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-        target="_blank"
-        rel="noopener noreferrer"
+function makeDiv(n) {
+  const possibilities = [n];
+
+  for (let i = 1; i <= n / 2; i++) {
+    if (n % i === 0) {
+      possibilities.push(i);
+    }
+  }
+
+  const j = Math.floor(Math.random() * possibilities.length);
+  const a = possibilities[j];
+
+  return {
+    question: `Divide by ${a}`,
+    value: n / a,
+  };
+}
+
+function makeTodo(n = 1) {
+  const op = n > 200 ? 1 : Math.floor(Math.random() * (n > MAX ? 3 : 4));
+
+  switch (op) {
+    case 0:
+      return makeSum(n);
+    case 1:
+      return makeDiv(n);
+    case 2:
+      return makeSub(n);
+    case 3:
+    default:
+      return makeMul(n);
+  }
+}
+
+/**
+ * Home
+ */
+const Home = () => {
+  const [status, setStatus] = useState(false);
+  const [value, setValue] = useState('');
+  const [score, setScore] = useState(0);
+  const [todo, setTodo] = useState(makeTodo());
+  const [time, setTime] = useState(10000);
+
+  useEffect(() => {
+    if (status) {
+      setTime(10000);
+      setScore(0);
+      setValue('');
+    }
+  }, [status]);
+
+  useInterval(() => {
+    setTime(time - INTERVAL);
+
+    if (time <= INTERVAL) {
+      setStatus(false);
+    }
+  }, 100);
+
+  const handleInput = (n) => () => {
+    const newValue = value.concat(n);
+
+    setValue(value.concat(n));
+
+    if (todo.value.toString().slice(0, newValue.length) !== newValue) {
+      setStatus(false);
+      return;
+    }
+
+    if (todo.value.toString() === newValue) {
+      setValue('');
+      setScore(score + 1);
+      setTodo(makeTodo(+newValue));
+    }
+  };
+
+  if (!status) {
+    return (
+      <ResumeScreen
+        onClick={() => {
+          setScore(0);
+          setValue('');
+          setStatus(true);
+        }}
+        score={score}
+      />
+    );
+  }
+
+  return (
+    <>
+      <Box
+        alignItems="center"
+        display="flex"
+        flexDirection="row"
+        justifyContent="space-between"
       >
-        Powered by <img src="/zeit.svg" alt="ZEIT Logo" />
-      </a>
-    </footer>
+        <Question>{todo.question}</Question>
+        <Score>{score}</Score>
+      </Box>
+      <Box
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        flex={1}
+      >
+        <UserInputs>{value}</UserInputs>
+      </Box>
+      <Timer>{time}</Timer>
+      <KeyBoard onClick={handleInput} />
+    </>
+  );
+};
 
-    <style jsx>{`
-      .container {
-        min-height: 100vh;
-        padding: 0 0.5rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
-
-      main {
-        padding: 5rem 0;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
-
-      footer {
-        width: 100%;
-        height: 100px;
-        border-top: 1px solid #eaeaea;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-
-      footer img {
-        margin-left: 0.5rem;
-      }
-
-      footer a {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      .title a {
-        color: #0070f3;
-        text-decoration: none;
-      }
-
-      .title a:hover,
-      .title a:focus,
-      .title a:active {
-        text-decoration: underline;
-      }
-
-      .title {
-        margin: 0;
-        line-height: 1.15;
-        font-size: 4rem;
-      }
-
-      .title,
-      .description {
-        text-align: center;
-      }
-
-      .description {
-        line-height: 1.5;
-        font-size: 1.5rem;
-      }
-
-      code {
-        background: #fafafa;
-        border-radius: 5px;
-        padding: 0.75rem;
-        font-size: 1.1rem;
-        font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-          DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-      }
-
-      .grid {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-wrap: wrap;
-
-        max-width: 800px;
-        margin-top: 3rem;
-      }
-
-      .card {
-        margin: 1rem;
-        flex-basis: 45%;
-        padding: 1.5rem;
-        text-align: left;
-        color: inherit;
-        text-decoration: none;
-        border: 1px solid #eaeaea;
-        border-radius: 10px;
-        transition: color 0.15s ease, border-color 0.15s ease;
-      }
-
-      .card:hover,
-      .card:focus,
-      .card:active {
-        color: #0070f3;
-        border-color: #0070f3;
-      }
-
-      .card h3 {
-        margin: 0 0 1rem 0;
-        font-size: 1.5rem;
-      }
-
-      .card p {
-        margin: 0;
-        font-size: 1.25rem;
-        line-height: 1.5;
-      }
-
-      @media (max-width: 600px) {
-        .grid {
-          width: 100%;
-          flex-direction: column;
-        }
-      }
-    `}</style>
-
-    <style jsx global>{`
-      html,
-      body {
-        padding: 0;
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-          Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-    `}</style>
-  </div>
-)
-
-export default Home
+export default Home;
